@@ -1,0 +1,15 @@
+div.translate {
+  margin: 10px;
+}
+
+div.craeteTable {
+  margin: 10px;
+}
+
+div.error {
+  color:firebrick;
+}
+
+input.translated_text {
+  width: 300px;
+}
