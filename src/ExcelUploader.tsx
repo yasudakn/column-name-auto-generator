@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FC, useRef, useState } from 'react'
+import React, { ChangeEvent, FC, useEffect, useRef, useState } from 'react'
 import csvParse from 'csv-parse/lib/sync';
 import * as iconv from 'iconv-lite';
 import axios from 'axios';
@@ -29,9 +29,10 @@ const ExcelUploader: FC = () => {
   const fileInput = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File>();
   let request = request_base;
-  const [buffer, setBuffer] = useState<Array<TranslatedText>>([]);
+  const [translatedHeaders, setTranslatedHeaders] = useState<Array<TranslatedText>>([]);
   const [createTableStatus, setCreateTableStatus] = useState("");
   const requestMaxLength = 24;
+  const [originHeaders, setOriginHeaders] = useState<Array<string>>([]);
 
   const handleTriggerReadFile = () => {
     if (fileInput.current) {
@@ -48,40 +49,45 @@ const ExcelUploader: FC = () => {
         // const firstSheetName = workbook.SheetNames[0];
         // const worksheet = workbook.Sheets[firstSheetName];
         // const data = utils.sheet_to_json(worksheet, {header:1});
-        const result = await csvParse(decodedString, { columns: true });
-        const translated_results = await Promise.all(
-          Object.keys(result[0]).filter(
-            x => x.trim()).map(
-              text => translate(text)));
-        setBuffer(translated_results.flat());
+        setOriginHeaders(await csvParse(decodedString, { columns: true }));
       })
     }
   }
+  const outputEventUpdate = (originHeaders: Array<string>) => {
+      if (originHeaders.length > 0 && originHeaders.length > translatedHeaders.length) {
+        Promise.all(
+          Object.keys(originHeaders[0]).filter(
+            x => x.trim()).map(text => translate(text)));
+        setOriginHeaders([]);
+      }
+    };
+  useEffect(() => { 
+    outputEventUpdate(originHeaders);
+  }, [outputEventUpdate]);
+
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let input = event.target;
     let files: FileList | null = input.files;
     handleReadFile(files ? files[0] : undefined);
   }
-  const translate = (text: string): Promise<TranslatedText> => {
+  const translate = (text: string) => {
     let error = text.length > requestMaxLength ?
       `max length ${requestMaxLength}` : undefined;
     request.text = text.slice(0, requestMaxLength);
-    const result = axios.post(urls.translate, request)
+    axios.post(urls.translate, request)
       .then(res => {
         let data = JSON.parse(JSON.stringify(res.data[0]))
         console.log(data.translated_text);
-        return { origin: text, translated_text: data.translated_text, error: error };
+        setTranslatedHeaders(prevBuffer => [...prevBuffer, { origin: text, translated_text: data.translated_text, error: error }]);
       }).catch(e => {
         console.error(e);
-        return { origin: text, translated_text: undefined, error: String(e) };
-      })
-    return result;
+      });
   }
 
   const createFormData = () => {
     const json = JSON.stringify({
       filename: file?.name,
-      header: buffer });
+      header: translatedHeaders });
     const blob = new Blob([json], {
       type: 'application/json'
     });
@@ -112,12 +118,12 @@ const ExcelUploader: FC = () => {
   const onChangeCell = (index: number, key: string) => (
     event: ChangeEvent<HTMLInputElement>
   ) => {
-    const _cells = [...buffer];
+    const _cells = [...translatedHeaders];
     _cells[index] = { ..._cells[index], [key]: event.target.value };
-    setBuffer(_cells);
+    setTranslatedHeaders(_cells);
   }
 
-  const generateRows = buffer.map((item, index) => {
+  const generateRows = translatedHeaders.map((item, index) => {
     return (
       <tr key={index}>
         <td>
@@ -145,7 +151,7 @@ const ExcelUploader: FC = () => {
       </form>
       <div className="translate">
         <div>
-          {buffer.length > 0 && (
+          {translatedHeaders.length > 0 && (
             <table>
               <thead>
                 <tr>
