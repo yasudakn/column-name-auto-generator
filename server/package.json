@@ -10,7 +10,7 @@
   "name": "codic-api",
   "version": "1.0.0",
   "dependencies": {
-    "@google-cloud/bigquery": "^5.8.0",
+    "@google-cloud/bigquery": "^5.9.0",
     "@google-cloud/storage": "^5.14.0",
     "braces": "^3.0.2",
     "csv": "^5.5.3",
