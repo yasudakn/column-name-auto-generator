@@ -10,6 +10,7 @@ type TranslateRequest = {
   casing: string;
 }
 type TranslatedText = {
+  index: number;
   origin: string;
   translated_text?: string;
   error?: string;
@@ -49,16 +50,16 @@ const ExcelUploader: FC = () => {
         // const firstSheetName = workbook.SheetNames[0];
         // const worksheet = workbook.Sheets[firstSheetName];
         // const data = utils.sheet_to_json(worksheet, {header:1});
-        setOriginHeaders(await csvParse(decodedString, { columns: true }));
+        setOriginHeaders(await csvParse(decodedString, { columns: true }));  // [{ key_1: 'value 1', key_2: 'value 2' }]
       })
     }
   }
   const outputEventUpdate = (originHeaders: Array<string>) => {
       if (originHeaders.length > 0 && originHeaders.length > translatedHeaders.length) {
         Promise.all(
-          Object.keys(originHeaders[0]).filter(
-            x => x.trim()).map(text => translate(text)));
-        setOriginHeaders([]);
+          Object.keys(originHeaders[0]).map((item, index) => {return {item: item, index: index}}).filter(
+            x => x.item.trim().length > 0).map(x => translate(x.item, x.index)));
+          setOriginHeaders([]);
       }
     };
   useEffect(() => { 
@@ -70,15 +71,16 @@ const ExcelUploader: FC = () => {
     let files: FileList | null = input.files;
     handleReadFile(files ? files[0] : undefined);
   }
-  const translate = (text: string) => {
-    let error = text.length > requestMaxLength ?
+  const translate = (item: string, index: number) => {
+    let error = item.length > requestMaxLength ?
       `max length ${requestMaxLength}` : undefined;
-    request.text = text.slice(0, requestMaxLength);
+    request.text = item.slice(0, requestMaxLength);
     axios.post(urls.translate, request)
       .then(res => {
         let data = JSON.parse(JSON.stringify(res.data[0]))
-        console.log(data.translated_text);
-        setTranslatedHeaders(prevBuffer => [...prevBuffer, { origin: text, translated_text: data.translated_text, error: error }]);
+        console.log(`${index} ${data.translated_text}`);
+        setTranslatedHeaders(prevBuffer => 
+          [...prevBuffer, { index: index, origin: item, translated_text: data.translated_text, error: error }].sort((a, b) => a.index - b.index));
       }).catch(e => {
         console.error(e);
       });
@@ -125,7 +127,7 @@ const ExcelUploader: FC = () => {
 
   const generateRows = translatedHeaders.map((item, index) => {
     return (
-      <tr key={index}>
+      <tr key={item.index}>
         <td>
           {item.origin}<div className="error">{item.error}</div>
         </td>

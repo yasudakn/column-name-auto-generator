@@ -13,15 +13,6 @@ const logger = log4js.getLogger ();
 logger.level = 'debug';
 app.use(log4js.connectLogger(log4js.getLogger('express')));
 
-// const BUCKET = 'bq-column-autocomplete-tool-test';
-const datasetId = "sandbox";
-const tableId = "my_table";
-const options = {
-    projectId: 'de-gcp-cft',
-};
-const bigquery = new BigQuery(options);
-// const storage = new Storage(options);
-
 // app.use((req: Request, res: Response, next: NextFunction) => {
 //     res.header("Access-Control-Allow-Origin", "*");
 //     res.header("Access-Control-Allow-Methods", "*");
@@ -52,6 +43,17 @@ app.use(express.urlencoded({
 }));
 app.use(express.json());
 
+// const BUCKET = 'bq-column-autocomplete-tool-test';
+const datasetId = "sandbox";
+const tableId = "my_table";
+const LOCATION = 'asia-northeast1';
+const options = {
+    projectId: 'de-gcp-cft',
+    location: LOCATION
+};
+const bigquery = new BigQuery(options);
+// const storage = new Storage(options);
+
 type TranslatedText = {
     origin: string;
     translated_text: string;
@@ -75,7 +77,7 @@ async function createTable(body: Array<TranslatedText>) {
     // For all options, see https://cloud.google.com/bigquery/docs/reference/v2/tables#resource
     const options: TableMetadata = {
         schema: fields,
-        location: 'asia-northeast1'
+        location: LOCATION
     };
 
     const table = await bigquery.dataset(datasetId).table(tableId);
@@ -102,7 +104,7 @@ async function createTable(body: Array<TranslatedText>) {
     };
 }
 
-function importToTable(
+async function importToTable(
     filepath: string,
     dataset: string,
     table: string,
@@ -114,27 +116,29 @@ function importToTable(
         schema: {
             fields:fields
         },
-        location: 'asia-northeast1'
+        location: LOCATION
     };
     // Load data from a Google Cloud Storage file into the table
     bigquery
         .dataset(dataset)
         .table(table)
         .load(filepath, metadata)
-        .then(job => {
-            const job_ = job[0];
+        .then(results => {
+            const job = results[0];
             // load() waits for the job to finish
-            console.log(`Job ${job_?.id} completed.`);
+            console.log(`Job ${job?.id} completed.`);
 
             // Check the job's status for errors
-            const errors = job_?.status?.errors;
+            const errors = job?.status?.errors;
             if (errors && errors.length > 0) {
                 console.error(errors);
             }
         })
-        .catch(e => {console.error(e)});
+        .catch(e => {
+            // bug -> Error: Not found: Job https://github.com/googleapis/nodejs-bigquery/issues/1016
+            console.warn(e);
+        });
     // .load(storage.bucket(BUCKET).file(filename), metadata);
-    
 }
 
 app.post(
