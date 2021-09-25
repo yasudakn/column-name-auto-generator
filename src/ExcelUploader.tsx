@@ -14,6 +14,7 @@ type TranslatedText = {
   origin: string;
   translated_text?: string;
   error?: string;
+  dtype?: string;
 }
 
 const ExcelUploader: FC = () => {
@@ -57,8 +58,8 @@ const ExcelUploader: FC = () => {
   const outputEventUpdate = (originHeaders: Array<string>) => {
       if (originHeaders.length > 0 && originHeaders.length > translatedHeaders.length) {
         Promise.all(
-          Object.keys(originHeaders[0]).map((item, index) => {return {item: item, index: index}}).filter(
-            x => x.item.trim().length > 0).map(x => translate(x.item, x.index)));
+          Object.keys(originHeaders[0]).map((item, index) => {return {origin: item, index: index}}).filter(
+            x => x.origin.trim().length > 0).map(x => translate(x.origin, x.index)));
           setOriginHeaders([]);
       }
     };
@@ -80,7 +81,7 @@ const ExcelUploader: FC = () => {
         let data = JSON.parse(JSON.stringify(res.data[0]))
         console.log(`${index} ${data.translated_text}`);
         setTranslatedHeaders(prevBuffer => 
-          [...prevBuffer, { index: index, origin: item, translated_text: data.translated_text, error: error }].sort((a, b) => a.index - b.index));
+          [...prevBuffer, { index: index, origin: item, translated_text: data.translated_text, error: error, dtype: 'string' }].sort((a, b) => a.index - b.index));
       }).catch(e => {
         console.error(e);
       });
@@ -124,6 +125,13 @@ const ExcelUploader: FC = () => {
     _cells[index] = { ..._cells[index], [key]: event.target.value };
     setTranslatedHeaders(_cells);
   }
+  const onChangeOption = (index: number, key: string) => (
+    event: ChangeEvent<HTMLSelectElement>
+  ) => {
+    const _cells = [...translatedHeaders];
+    _cells[index] = { ..._cells[index], [key]: event.target.value };
+    setTranslatedHeaders(_cells);
+  }
 
   const generateRows = translatedHeaders.map((item, index) => {
     return (
@@ -133,6 +141,18 @@ const ExcelUploader: FC = () => {
         </td>
         <td>
           <input className="translated_text" onChange={onChangeCell(index, 'translated_text')} value={item.translated_text} />
+        </td>
+        <td>
+          <select value={item.dtype} onChange={onChangeOption(index, 'dtype')}>
+            <option value='string'>string</option>
+            <option value='integer'>integer</option>
+            <option value='float'>float</option>
+            <option value='boolean'>boolean</option>
+            <option value='datetime'>datetime</option>
+            <option value='date'>date</option>
+            <option value='timestamp'>timestamp</option>
+            <option value='record'>record</option>
+          </select>
         </td>
       </tr>
     );
@@ -159,6 +179,7 @@ const ExcelUploader: FC = () => {
                 <tr>
                   <th>text</th>
                   <th>translated text</th>
+                  <th>type</th>
                 </tr>
               </thead>
               <tbody>{generateRows}</tbody>

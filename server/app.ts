@@ -19,10 +19,10 @@ app.use(log4js.connectLogger(log4js.getLogger('express')));
 //     res.header("Access-Control-Allow-Headers", "*");
 //     next();
 // });
-const token = 'A0DpLSALShLgmtCeTuezdNtpTKQlXlH1A7';
-const headers  = {
+const codic_token = ''; // your's codic token
+const codic_headers  = {
     "Content-Type": "application/json;charset=utf-8",
-    "Authorization": `Bearer ${token}`
+    "Authorization": `Bearer ${codic_token}`
 }
 
 //then, after all proxys
@@ -32,7 +32,7 @@ app.use(
         target: 'https://api.codic.jp',
         changeOrigin: true,
         secure: false,
-        headers: headers,
+        headers: codic_headers,
         logLevel: 'debug'
     })
 );
@@ -57,6 +57,7 @@ const bigquery = new BigQuery(options);
 type TranslatedText = {
     origin: string;
     translated_text: string;
+    dtype: string;
 }
 type Field = {
     name: string;
@@ -69,7 +70,7 @@ async function createTable(body: Array<TranslatedText>) {
         // console.log(value);
         fields.push({
             name: value.translated_text,
-            type: 'string',
+            type: value.dtype,
             description: value.origin
         })
     })
