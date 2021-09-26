@@ -123,7 +123,7 @@ async function importToTable(
 app.post(
     '/create',
     upload.fields([{
-        name: 'header',
+        name: 'header_info',
         maxCount: 1
     },{
         name: 'uploaded_file',
@@ -131,7 +131,7 @@ app.post(
     }]),
     async (req: Request, res: Response, next: NextFunction) => {
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-        const header_info = JSON.parse(files['header'][0].buffer?.toString('utf-8'));
+        const header_info = JSON.parse(files['header_info'][0].buffer?.toString('utf-8'));
         console.log(header_info);
         const file = files['uploaded_file'][0].buffer;
         const dest_filepath = `./uploads/${header_info.filename}`;

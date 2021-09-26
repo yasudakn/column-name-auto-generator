@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react'
+import React, { ChangeEvent, FC, useEffect, useMemo, useRef, useState } from 'react'
 import csvParse from 'csv-parse/lib/sync';
 import * as iconv from 'iconv-lite';
 import axios from 'axios';
@@ -50,7 +50,8 @@ const ExcelUploader: FC = () => {
       })
     }
   }
-  const translate = useCallback((item: string, index: number) => {
+  const translate = useMemo(() => {
+    return (item: string, index: number) => {
     let error = item.length > requestMaxLength ?
       `max length ${requestMaxLength}` : undefined;
     request.text = item.slice(0, requestMaxLength);
@@ -63,19 +64,24 @@ const ExcelUploader: FC = () => {
       }).catch(e => {
         console.error(e);
       });
+    }
   },[urls.translate, request]);
-  const outputEventUpdate = useCallback((originHeaders: Array<string>) => {
-      if (originHeaders.length > 0 && originHeaders.length > translatedHeaders.length) {
-        Promise.all(
-          Object.keys(originHeaders[0]).map((item, index) => {return {origin: item, index: index}}).filter(
-            x => x.origin.trim().length > 0).map(x => translate(x.origin, x.index)));
-          setOriginHeaders([]);
-      }
-    },[translatedHeaders.length, translate]);
+
+  const outputEventUpdate = useMemo(() => {
+    return (originHeaders: Array<string>) => {
+      Promise.all(
+        Object.keys(originHeaders[0]).map((item, index) => {return {origin: item, index: index}}).filter(
+          x => x.origin.trim().length > 0).map(x => translate(x.origin, x.index)));
+        }
+    },[translate]);
 
   useEffect(() => { 
-    outputEventUpdate(originHeaders);
-  }, [outputEventUpdate, originHeaders]);
+    if (originHeaders.length > 0 && 
+        originHeaders.length > translatedHeaders.length) {
+      outputEventUpdate(originHeaders);
+      setOriginHeaders([]);
+    }
+  }, [outputEventUpdate, originHeaders, translatedHeaders.length]);
 
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let input = event.target;
@@ -92,7 +98,7 @@ const ExcelUploader: FC = () => {
     });
     let params = new FormData();
     if ( file ) params.append('uploaded_file', file);
-    params.append('header', blob);
+    params.append('header_info', blob);
     return params;
   }
 
