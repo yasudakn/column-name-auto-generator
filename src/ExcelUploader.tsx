@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FC, useEffect, useRef, useState } from 'react'
+import React, { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react'
 import csvParse from 'csv-parse/lib/sync';
 import * as iconv from 'iconv-lite';
 import axios from 'axios';
@@ -50,25 +50,7 @@ const ExcelUploader: FC = () => {
       })
     }
   }
-  const outputEventUpdate = (originHeaders: Array<string>) => {
-      if (originHeaders.length > 0 && originHeaders.length > translatedHeaders.length) {
-        Promise.all(
-          Object.keys(originHeaders[0]).map((item, index) => {return {origin: item, index: index}}).filter(
-            x => x.origin.trim().length > 0).map(x => translate(x.origin, x.index)));
-          setOriginHeaders([]);
-      }
-    };
-  useEffect(() => { 
-    outputEventUpdate(originHeaders);
-  }, [outputEventUpdate]);
-
-  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    let input = event.target;
-    let files: FileList | null = input.files;
-
-    handleReadFile(files ? files[0] : undefined);
-  }
-  const translate = (item: string, index: number) => {
+  const translate = useCallback((item: string, index: number) => {
     let error = item.length > requestMaxLength ?
       `max length ${requestMaxLength}` : undefined;
     request.text = item.slice(0, requestMaxLength);
@@ -81,8 +63,26 @@ const ExcelUploader: FC = () => {
       }).catch(e => {
         console.error(e);
       });
-  }
+  },[urls.translate, request]);
+  const outputEventUpdate = useCallback((originHeaders: Array<string>) => {
+      if (originHeaders.length > 0 && originHeaders.length > translatedHeaders.length) {
+        Promise.all(
+          Object.keys(originHeaders[0]).map((item, index) => {return {origin: item, index: index}}).filter(
+            x => x.origin.trim().length > 0).map(x => translate(x.origin, x.index)));
+          setOriginHeaders([]);
+      }
+    },[translatedHeaders.length, translate]);
 
+  useEffect(() => { 
+    outputEventUpdate(originHeaders);
+  }, [outputEventUpdate, originHeaders]);
+
+  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    let input = event.target;
+    let files: FileList | null = input.files;
+
+    handleReadFile(files ? files[0] : undefined);
+  }
   const createFormData = () => {
     const json = JSON.stringify({
       filename: file?.name,
