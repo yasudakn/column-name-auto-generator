@@ -1,10 +1,10 @@
-import { createProxyMiddleware } from 'http-proxy-middleware';
 import express, {Request, Response, NextFunction} from 'express';
 import {BigQuery, TableMetadata} from '@google-cloud/bigquery';
-// import {Storage} from '@google-cloud/storage';
 import { writeFileSync } from 'fs';
 import multer from 'multer';
-
+import config from 'dotenv';
+ 
+config.config(); // load .env
 const app: express.Express = express();
 const upload = multer();
 
@@ -19,23 +19,6 @@ app.use(log4js.connectLogger(log4js.getLogger('express')));
 //     res.header("Access-Control-Allow-Headers", "*");
 //     next();
 // });
-const codic_token = ''; // your's codic token
-const codic_headers  = {
-    "Content-Type": "application/json;charset=utf-8",
-    "Authorization": `Bearer ${codic_token}`
-}
-
-//then, after all proxys
-app.use(
-    '/v1',
-    createProxyMiddleware({
-        target: 'https://api.codic.jp',
-        changeOrigin: true,
-        secure: false,
-        headers: codic_headers,
-        logLevel: 'debug'
-    })
-);
 
 //and now, all no proxy routes
 app.use(express.urlencoded({
@@ -43,16 +26,14 @@ app.use(express.urlencoded({
 }));
 app.use(express.json());
 
-// const BUCKET = 'bq-column-autocomplete-tool-test';
-const datasetId = "sandbox";
-const tableId = "my_table";
-const LOCATION = 'asia-northeast1';
+const datasetId = process.env.DATASET_ID || 'missing';
+const tableId = process.env.TABLE_ID || 'missing';
+const LOCATION = process.env.LOCATION;
 const options = {
-    projectId: 'de-gcp-cft',
+    projectId: process.env.PROJECT_ID,
     location: LOCATION
 };
 const bigquery = new BigQuery(options);
-// const storage = new Storage(options);
 
 type TranslatedText = {
     origin: string;
@@ -67,7 +48,6 @@ type Field = {
 async function createTable(body: Array<TranslatedText>) {
     let fields = Array<Field>();
     body.forEach((value)=>{
-        // console.log(value);
         fields.push({
             name: value.translated_text,
             type: value.dtype,
@@ -136,10 +116,8 @@ async function importToTable(
             }
         })
         .catch(e => {
-            // bug -> Error: Not found: Job https://github.com/googleapis/nodejs-bigquery/issues/1016
-            console.warn(e);
+            console.error(e);
         });
-    // .load(storage.bucket(BUCKET).file(filename), metadata);
 }
 
 app.post(

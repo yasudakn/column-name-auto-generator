@@ -16,14 +16,13 @@ type TranslatedText = {
   error?: string;
   dtype?: string;
 }
-
 const ExcelUploader: FC = () => {
   const urls = {
     translate: "/v1/engine/translate.json",
     createTable: "/create"
   };
   const request_base: TranslateRequest = {
-    project_id: '21109',
+    project_id: process.env.REACT_APP_CODIC_PROJECT_ID || 'missing', // codic project id
     text: '',
     casing: "lower underscore"
   }
@@ -45,12 +44,8 @@ const ExcelUploader: FC = () => {
     if (fileObj) {
       setFile(fileObj);
       fileObj.arrayBuffer().then(async (buffer) => {
-        // TODO ヘッダー行のみ読み込めば良い
+        // ヘッダー行のみ読み込む
         const decodedString = iconv.decode(Buffer.from(buffer), 'utf-8');
-        // const workbook = read(buffer, { type: 'buffer', bookVBA: true });
-        // const firstSheetName = workbook.SheetNames[0];
-        // const worksheet = workbook.Sheets[firstSheetName];
-        // const data = utils.sheet_to_json(worksheet, {header:1});
         setOriginHeaders(await csvParse(decodedString, { columns: true }));  // [{ key_1: 'value 1', key_2: 'value 2' }]
       })
     }
@@ -70,6 +65,7 @@ const ExcelUploader: FC = () => {
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let input = event.target;
     let files: FileList | null = input.files;
+
     handleReadFile(files ? files[0] : undefined);
   }
   const translate = (item: string, index: number) => {

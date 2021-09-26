@@ -1,5 +1,5 @@
 {
-  "name": "ts-tutorial",
+  "name": "column-name-auto-generator",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -12,6 +12,7 @@
     "@types/react-dom": "^17.0.0",
     "axios": "^0.21.1",
     "csv": "^5.5.3",
+    "dotenv": "^10.0.0",
     "http-proxy-middleware": "^2.0.1",
     "iconv-lite": "^0.6.3",
     "react": "^17.0.2",
@@ -46,5 +47,5 @@
     ]
   },
   "type": "commonjs",
-  "proxy": "http://localhost:3001"
+  "proxy": "http://localhost:3000"
 }
