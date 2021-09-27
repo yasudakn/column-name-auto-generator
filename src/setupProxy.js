@@ -1,5 +1,9 @@
 const config = require('dotenv');
 const { createProxyMiddleware } = require('http-proxy-middleware');
+const pkg = require('../package.json')
+const target = process.env.PROXY || pkg.proxy
+// tslint:disable-next-line:no-console
+console.log("setupProxy", target);
 
 config.config(); // load .env
 
@@ -14,7 +18,7 @@ module.exports = function(app) {
     app.use(
       '/v1',
       createProxyMiddleware({
-        target: "https://api.codic.jp/",
+        target: process.env.REACT_APP_CODIC_API_URL,
         changeOrigin: true,
         secure: false,
         headers: codic_headers,
@@ -24,7 +28,7 @@ module.exports = function(app) {
     app.use(
         '/create',
         createProxyMiddleware({
-          target: "http://localhost:3001/",
+          target: target,
           changeOrigin: true,
           secure: false,
           logLevel: 'debug'

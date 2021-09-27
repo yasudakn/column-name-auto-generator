@@ -2,7 +2,7 @@ import React, { ChangeEvent, FC, useEffect, useMemo, useRef, useState } from 're
 import csvParse from 'csv-parse/lib/sync';
 import * as iconv from 'iconv-lite';
 import axios from 'axios';
-import './ExcelUploader.css';
+import './ColumnNameConverter.css';
 
 type TranslateRequest = {
   project_id: string;
@@ -16,7 +16,7 @@ type TranslatedText = {
   error?: string;
   dtype?: string;
 }
-const ExcelUploader: FC = () => {
+const ColumnNameConverter: FC = () => {
   const urls = {
     translate: "/v1/engine/translate.json",
     createTable: "/create"
@@ -26,14 +26,14 @@ const ExcelUploader: FC = () => {
     text: '',
     casing: "lower underscore"
   }
-  const codic_url = "https://codic.jp/";
+  const codic_url = process.env.REACT_APP_CODIC_URL;
   const fileInput = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File>();
   let request = request_base;
   const [translatedHeaders, setTranslatedHeaders] = useState<Array<TranslatedText>>([]);
   const [createTableStatus, setCreateTableStatus] = useState("");
-  const requestMaxLength = 24;
   const [originHeaders, setOriginHeaders] = useState<Array<string>>([]);
+  const requestMaxLength = Number(process.env.REACT_APP_CODIC_API_REQUEST_MAX_LENGTH);
 
   const handleTriggerReadFile = () => {
     if (fileInput.current) {
@@ -43,6 +43,7 @@ const ExcelUploader: FC = () => {
   const handleReadFile = (fileObj?: File) => {
     if (fileObj) {
       setFile(fileObj);
+      setTranslatedHeaders([]);
       fileObj.arrayBuffer().then(async (buffer) => {
         // ヘッダー行のみ読み込む
         const decodedString = iconv.decode(Buffer.from(buffer), 'utf-8');
@@ -65,7 +66,7 @@ const ExcelUploader: FC = () => {
         console.error(e);
       });
     }
-  },[urls.translate, request]);
+  },[urls.translate, request, requestMaxLength]);
 
   const outputEventUpdate = useMemo(() => {
     return (originHeaders: Array<string>) => {
@@ -200,4 +201,4 @@ const ExcelUploader: FC = () => {
     </div>
   )
 }
-export default ExcelUploader
+export default ColumnNameConverter

@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import ExcelUploader from './ExcelUploader';
+import ExcelUploader from './ColumnNameConverter';
 import reportWebVitals from './reportWebVitals';
 
 ReactDOM.render(
