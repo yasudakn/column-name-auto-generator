@@ -2,6 +2,19 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+### Configuration
+
+edit .env
+
+```
+REACT_APP_CODIC_URL=https://codic.jp/
+REACT_APP_CODIC_API_URL=https://api.codic.jp/
+REACT_APP_CODIC_API_REQUEST_MAX_LENGTH=24
+
+REACT_APP_CODIC_PROJECT_ID= <codic-project-id>
+REACT_APP_CODIC_API_TOKEN= <codic-api-token>
+```
+
 ## Available Scripts
 
 In the project directory, you can run:
