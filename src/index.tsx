@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import ExcelUploader from './ColumnNameConverter';
 import reportWebVitals from './reportWebVitals';
+import ColumnNameConverter from './ColumnNameConverter';
 
 ReactDOM.render(
   <React.StrictMode>
-    <ExcelUploader />
+    <ColumnNameConverter />
   </React.StrictMode>,
   document.getElementById('root')
 );
