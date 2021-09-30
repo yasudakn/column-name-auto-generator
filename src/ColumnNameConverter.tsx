@@ -21,15 +21,15 @@ const ColumnNameConverter: FC = () => {
     translate: "/v1/engine/translate.json",
     createTable: "/create"
   };
-  const request_base: TranslateRequest = {
+  const requestBase: TranslateRequest = {
     project_id: process.env.REACT_APP_CODIC_PROJECT_ID || 'missing', // codic project id
     text: '',
     casing: "lower underscore"
   }
-  const codic_url = process.env.REACT_APP_CODIC_URL;
+  const codicUrl = process.env.REACT_APP_CODIC_URL;
   const fileInput = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File>();
-  let request = request_base;
+  let request = requestBase;
   const [translatedHeaders, setTranslatedHeaders] = useState<Array<TranslatedText>>([]);
   const [createTableStatus, setCreateTableStatus] = useState("");
   const [originHeaders, setOriginHeaders] = useState<Array<string>>([]);
@@ -85,7 +85,7 @@ const ColumnNameConverter: FC = () => {
     }
   }, [outputEventUpdate, originHeaders, translatedHeaders.length]);
 
-  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const onChangeFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     let input = event.target;
     let files: FileList | null = input.files;
 
@@ -108,6 +108,7 @@ const ColumnNameConverter: FC = () => {
 
   const handleCreateTable = async (event: React.ChangeEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setCreateTableStatus("");
     await axios({
       method: 'post',
       url: urls.createTable,
@@ -117,7 +118,11 @@ const ColumnNameConverter: FC = () => {
       .then(res => {
         let data = JSON.parse(JSON.stringify(res.data));
         console.log(data);
-        setCreateTableStatus(`success! 作成したテーブルは${data?.datasetId}:${data?.tableId}`);
+        if(!data?.error_reason){
+          setCreateTableStatus(`success! 作成したテーブルは${data?.datasetId}:${data?.tableId}`);
+        }else{
+          setCreateTableStatus(`fail! ${data?.error_reason}`)
+        }
       })
       .catch(e => {
         console.log(e);
@@ -170,7 +175,7 @@ const ColumnNameConverter: FC = () => {
 
   return (
     <div style={{ padding: '20px' }}>
-      <p style={{ paddingBottom: '20px' }}>csvファイルの日本語カラム名を<a href={codic_url} target="_blank" rel="noreferrer">codic</a>を使って自動的に英字に変換し、BigQueryにデータをインポートする。</p>
+      <p style={{ paddingBottom: '20px' }}>csvファイルの日本語カラム名を<a href={codicUrl} target="_blank" rel="noreferrer">codic</a>を使って自動的に英字に変換し、BigQueryにデータをインポートする。</p>
       <button onClick={() => handleTriggerReadFile()}>ファイル選択</button>
       {!!file?.name && <span>ファイル名：{file?.name}</span>}
       <form style={{ display: 'none' }}>
@@ -178,7 +183,7 @@ const ColumnNameConverter: FC = () => {
           type="file"
           accept="text/csv"
           ref={fileInput}
-          onChange={onChange}
+          onChange={onChangeFileUpload}
         />
       </form>
       <div className="translate">

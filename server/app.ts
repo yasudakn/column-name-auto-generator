@@ -115,7 +115,7 @@ async function importToTable(
             }
         })
         .catch(e => {
-            console.error(e);
+            throw(e);
         });
 }
 
@@ -147,6 +147,8 @@ app.post(
             res.send(JSON.stringify(table_info));
         }catch(e){
             console.error(e);
+            // res.status(500);
+            res.send(JSON.stringify({error_reason: String(e)}));
         }
     }
 )
