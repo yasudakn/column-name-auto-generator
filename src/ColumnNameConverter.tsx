@@ -33,6 +33,7 @@ const ColumnNameConverter: FC = () => {
   const [translatedHeaders, setTranslatedHeaders] = useState<Array<TranslatedText>>([]);
   const [createTableStatus, setCreateTableStatus] = useState("");
   const [originHeaders, setOriginHeaders] = useState<Array<string>>([]);
+  const [tableName, setTableName] = useState("my_table");
   const requestMaxLength = Number(process.env.REACT_APP_CODIC_API_REQUEST_MAX_LENGTH);
 
   const handleTriggerReadFile = () => {
@@ -93,7 +94,9 @@ const ColumnNameConverter: FC = () => {
   const createFormData = () => {
     const json = JSON.stringify({
       filename: file?.name,
-      header: translatedHeaders });
+      header: translatedHeaders,
+      table_name: tableName
+     });
     const blob = new Blob([json], {
       type: 'application/json'
     });
@@ -134,6 +137,10 @@ const ColumnNameConverter: FC = () => {
     const _cells = [...translatedHeaders];
     _cells[index] = { ..._cells[index], [key]: event.target.value };
     setTranslatedHeaders(_cells);
+  }
+  const onChangeTableName = (event: ChangeEvent<HTMLInputElement>) => {
+    let input = event.target;
+    setTableName(input.value);
   }
 
   const generateRows = translatedHeaders.map((item, index) => {
@@ -180,9 +187,9 @@ const ColumnNameConverter: FC = () => {
             <table>
               <thead>
                 <tr>
-                  <th>text</th>
-                  <th>translated text</th>
-                  <th>type</th>
+                  <th>元カラム名</th>
+                  <th>変換後</th>
+                  <th>データ型</th>
                 </tr>
               </thead>
               <tbody>{generateRows}</tbody>
@@ -190,9 +197,12 @@ const ColumnNameConverter: FC = () => {
           )}
         </div>
       </div>
+      <hr/>
+      <p>BigQueryへデータインポート</p>
       <div className="createTable">
         <form onSubmit={handleCreateTable}>
-          <button type="submit">Create Table</button>
+          <div>テーブル名: <input className="table_name" onChange={onChangeTableName} value={tableName}/></div>
+          <div><button type="submit">作成とデータインポート</button></div>
         </form>
         <div>
           {createTableStatus}

@@ -27,7 +27,6 @@ app.use(express.urlencoded({
 app.use(express.json());
 
 const datasetId = process.env.DATASET_ID || 'missing';
-const tableId = process.env.TABLE_ID || 'missing';
 const LOCATION = process.env.LOCATION;
 const options = {
     projectId: process.env.PROJECT_ID,
@@ -45,7 +44,7 @@ type Field = {
     type: string;
     description: string;
 }
-async function createTable(body: Array<TranslatedText>) {
+async function createTable(body: Array<TranslatedText>, tableId: string) {
     let fields = Array<Field>();
     body.forEach((value)=>{
         fields.push({
@@ -137,7 +136,7 @@ app.post(
         const dest_filepath = `./uploads/${header_info.filename}`;
         try{
             writeFileSync(dest_filepath, file, {flag: 'w', encoding: 'utf-8'});
-            const table_info = await createTable(header_info.header);
+            const table_info = await createTable(header_info.header, header_info.table_name);
             if(table_info.tableId){
                 importToTable(
                     dest_filepath,
