@@ -21,7 +21,6 @@ GOOGLE_APPLICATION_CREDENTIALS= <gcp-service-account-credentials-json-filepath>
 PROJECT_ID= <gcp-project-id>
 LOCATION= <gcp-location>
 DATASET_ID= <bigquery-dataset-id>
-TABLE_ID= <bigquery-table-id>
 ```
 
 2. start node.js
