@@ -2,9 +2,12 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Configuration
+## 事前準備
 
-edit .env
+GCPサービスアカウントを作成して、jsonのキーファイルをkeysに配置しておきます。
+https://cloud.google.com/iam/docs/creating-managing-service-account-keys
+
+.envを以下のようにプレースホルダーを埋めて作成いしておきます。
 
 ```
 FRONTEND_PORT=3000
@@ -25,13 +28,14 @@ LOCATION= <gcp-location>
 DATASET_ID= <bigquery-dataset-id>
 ```
 
-## container start
+## Dockerコンテナでアプリケーションを立ち上げる
 
+docker-composeでフロントエンドとバックエンドのコンテナを構築して、立ち上げると簡単です。
 ```
 docker-compose up --build
 ```
 
-## Available Scripts
+## フロントエンドを個別に立ち上げるとき
 
 In the project directory, you can run:
 
