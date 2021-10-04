@@ -4,10 +4,15 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 ## 事前準備
 
+* GCPサービスアカウント
 GCPサービスアカウントを作成して、jsonのキーファイルをkeysに配置しておきます。
 https://cloud.google.com/iam/docs/creating-managing-service-account-keys
 
-.envを以下のようにプレースホルダーを埋めて作成いしておきます。
+* codic api
+codic apiを呼び出すためにアクセストークンを作成しておきます。
+https://codic.jp/docs/api
+
+以下を.envを作ります。適宜、プレースホルダーを埋めてください。
 
 ```
 FRONTEND_PORT=3000
