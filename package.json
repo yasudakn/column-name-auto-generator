@@ -47,5 +47,5 @@
     ]
   },
   "type": "commonjs",
-  "proxy": "http://localhost:3001"
+  "proxy": "http://column-generator-backend:3001"
 }
