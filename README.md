@@ -2,17 +2,33 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-### Configuration
+## Configuration
 
 edit .env
 
 ```
+FRONTEND_PORT=3000
+CONTAINER_NAME=column-generator-frontend
+
 REACT_APP_CODIC_URL=https://codic.jp/
 REACT_APP_CODIC_API_URL=https://api.codic.jp/
 REACT_APP_CODIC_API_REQUEST_MAX_LENGTH=24
-
 REACT_APP_CODIC_PROJECT_ID= <codic-project-id>
 REACT_APP_CODIC_API_TOKEN= <codic-api-token>
+
+BACKEND_CONTAINER_NAME=column-generator-backend
+BACKEND_PORT=3001
+
+GOOGLE_APPLICATION_CREDENTIALS= /app/keys/<gcp-service-account-credentials-json-filepath>
+PROJECT_ID= <gcp-project-id>
+LOCATION= <gcp-location>
+DATASET_ID= <bigquery-dataset-id>
+```
+
+## container start
+
+```
+docker-compose up --build
 ```
 
 ## Available Scripts
