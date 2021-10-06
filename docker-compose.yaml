@@ -13,8 +13,8 @@ services:
     restart: always
   column-generator-backend:
     build:
-      context: "server"
-      dockerfile: Dockerfile
+      context: ""
+      dockerfile: server/Dockerfile
     # unique name
     container_name: ${BACKEND_CONTAINER_NAME}
     volumes:

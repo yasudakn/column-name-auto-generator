@@ -6,12 +6,10 @@ RUN apt-get update && \
     git yarn \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
 
-WORKDIR /app
-
-RUN git clone https://github.com/yasudakn/column-name-auto-generator.git
-
-RUN cd /app/column-name-auto-generator && yarn add react-scripts typescript && yarn build
+COPY ./ /app/column-name-auto-generator
 
 WORKDIR /app/column-name-auto-generator
+
+RUN yarn add react-scripts typescript && yarn build
 
 ENTRYPOINT [ "yarn", "start" ]
