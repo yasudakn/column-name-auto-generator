@@ -5,7 +5,7 @@ services:
       context: ""
       dockerfile: Dockerfile
     # unique name
-    container_name: ${CONTAINER_NAME}
+    container_name: ${FRONTEND_CONTAINER_NAME}
     ports:
       - ${FRONTEND_PORT}:${FRONTEND_PORT}
     env_file:

@@ -53,7 +53,7 @@ const ColumnNameConverter: FC = () => {
   );
   const [createTableStatus, setCreateTableStatus] = useState("");
   const [createTableFields, setCreateTableFields] = useState("");
-  const [originHeaders, setOriginHeaders] = useState<string[]>([]);
+  const [originHeaders, setOriginHeaders] = useState<[{[key: string]: any;}]>([{}]);
   const [tableName, setTableName] = useState("my_table");
   const requestMaxLength = Number(
     process.env.REACT_APP_CODIC_API_REQUEST_MAX_LENGTH
@@ -72,13 +72,13 @@ const ColumnNameConverter: FC = () => {
       fileObj.arrayBuffer().then(async (buffer) => {
         // ヘッダー行のみ読み込む
         const decodedString = iconv.decode(Buffer.from(buffer), "utf-8");
-        setOriginHeaders(await csvParse(decodedString, { columns: true })); // [{ key_1: 'value 1', key_2: 'value 2' }]
+        setOriginHeaders(await csvParse(decodedString, { columns: true, cast: true})); // [{ key_1: 'value 1', key_2: 'value 2' }]
       });
     }
   };
 
   const translate = useMemo(() => {
-    return (item: string, index: number, repl: boolean = false) => {
+    return (item: string, index: number, val: any, repl: boolean = false) => {
       let warnMessage =
         item.length > requestMaxLength
           ? `max length ${requestMaxLength}`
@@ -88,7 +88,7 @@ const ColumnNameConverter: FC = () => {
         .post(urls.translate, request)
         .then((res) => {
           let data = JSON.parse(JSON.stringify(res.data[0]));
-          console.log(`${index} ${data.text} -> ${data.translated_text}`);
+          console.log(`${index} ${data.text} -> ${data.translated_text}, ${typeof val}`);
           // 後処理
           let post_translated_text = translate_postproc(data.translated_text);
           if (repl) {
@@ -112,7 +112,7 @@ const ColumnNameConverter: FC = () => {
                   origin: item,
                   translated_text: post_translated_text,
                   error: warnMessage,
-                  dtype: "string",
+                  dtype: typeof val,
                 },
               ].sort((a, b) => a.index - b.index)
             );
@@ -140,7 +140,7 @@ const ColumnNameConverter: FC = () => {
                   origin: item,
                   translated_text: "",
                   error: e.message,
-                  dtype: "string",
+                  dtype: typeof val,
                 },
               ].sort((a, b) => a.index - b.index)
             );
@@ -150,25 +150,27 @@ const ColumnNameConverter: FC = () => {
   }, [request, requestMaxLength, urls.translate]);
 
   const outputEventUpdate = useMemo(() => {
-    return (originHeaders: string[]) => {
+    return (originHeaders: [{[key:string]: any;}]) => {
+      // console.log(originHeaders[0]);
       Promise.all(
         Object.keys(originHeaders[0])
           .map((item, index) => {
-            return { origin: item, index: index };
+            return { origin: item, index: index, val: originHeaders[0][item] };
           })
           .filter((x) => x.origin.trim().length > 0)
-          .map((x) => translate(x.origin, x.index))
+          .map((x) => translate(x.origin, x.index, x.val))
       );
     };
   }, [translate]);
 
   useEffect(() => {
     if (
-      originHeaders.length > 0 &&
+      originHeaders.length > 0 && 
+      Object.keys(originHeaders[0]).length > 0 &&
       originHeaders.length > translatedHeaders.length
     ) {
       outputEventUpdate(originHeaders);
-      setOriginHeaders([]);
+      setOriginHeaders([{}]);
     }
   }, [outputEventUpdate, originHeaders, translatedHeaders.length]);
 
@@ -265,8 +267,7 @@ const ColumnNameConverter: FC = () => {
         <td>
           <select value={item.dtype} onChange={onChangeOption(index, "dtype")}>
             <option value="string">string</option>
-            <option value="integer">integer</option>
-            <option value="float">float</option>
+            <option value="number">number</option>
             <option value="boolean">boolean</option>
             <option value="datetime">datetime</option>
             <option value="date">date</option>
