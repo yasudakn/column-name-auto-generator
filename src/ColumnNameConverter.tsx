@@ -10,11 +10,12 @@ import useCollapse from "react-collapsed";
 import DownloadLink from "react-download-link";
 import csvParse from "csv-parse/lib/sync";
 import * as iconv from "iconv-lite";
+import * as chardet from "chardet";
 import axios from "axios";
 import "./ColumnNameConverter.css";
 
 type TranslateRequest = {
-  project_id: string;
+  project_id: string | undefined;
   text: string;
   casing: string;
 };
@@ -33,6 +34,12 @@ const translate_postproc = (translated_text: string) => {
   post = post.replace(/([^\x01-\x7E]+)/g, "");
   return post;
 };
+const mapping_dtype = (dtype: string) => {
+  if (dtype === "number") {
+    return "float64";
+  }
+  return dtype;
+};
 
 const ColumnNameConverter: FC = () => {
   const urls = {
@@ -40,7 +47,7 @@ const ColumnNameConverter: FC = () => {
     createTable: "/create",
   };
   const requestBase: TranslateRequest = {
-    project_id: process.env.REACT_APP_CODIC_PROJECT_ID || "missing", // codic project id
+    project_id: process.env.REACT_APP_CODIC_PROJECT_ID || undefined, // codic project id
     text: "",
     casing: "lower underscore",
   };
@@ -53,7 +60,9 @@ const ColumnNameConverter: FC = () => {
   );
   const [createTableStatus, setCreateTableStatus] = useState("");
   const [createTableFields, setCreateTableFields] = useState("");
-  const [originHeaders, setOriginHeaders] = useState<[{[key: string]: any;}]>([{}]);
+  const [originHeaders, setOriginHeaders] = useState<[{ [key: string]: any }]>([
+    {},
+  ]);
   const [tableName, setTableName] = useState("my_table");
   const requestMaxLength = Number(
     process.env.REACT_APP_CODIC_API_REQUEST_MAX_LENGTH
@@ -71,8 +80,13 @@ const ColumnNameConverter: FC = () => {
       setTranslatedHeaders([]);
       fileObj.arrayBuffer().then(async (buffer) => {
         // ヘッダー行のみ読み込む
-        const decodedString = iconv.decode(Buffer.from(buffer), "utf-8");
-        setOriginHeaders(await csvParse(decodedString, { columns: true, cast: true})); // [{ key_1: 'value 1', key_2: 'value 2' }]
+        const decodedString = iconv.decode(
+          Buffer.from(buffer),
+          chardet.detect(new Uint8Array(buffer))!.toString()
+        );
+        setOriginHeaders(
+          await csvParse(decodedString, { columns: true, cast: true })
+        ); // [{ key_1: 'value 1', key_2: 'value 2' }]
       });
     }
   };
@@ -88,7 +102,9 @@ const ColumnNameConverter: FC = () => {
         .post(urls.translate, request)
         .then((res) => {
           let data = JSON.parse(JSON.stringify(res.data[0]));
-          console.log(`${index} ${data.text} -> ${data.translated_text}, ${typeof val}`);
+          console.log(
+            `${index} ${data.text} -> ${data.translated_text}, ${typeof val}`
+          );
           // 後処理
           let post_translated_text = translate_postproc(data.translated_text);
           if (repl) {
@@ -112,7 +128,7 @@ const ColumnNameConverter: FC = () => {
                   origin: item,
                   translated_text: post_translated_text,
                   error: warnMessage,
-                  dtype: typeof val,
+                  dtype: mapping_dtype(typeof val),
                 },
               ].sort((a, b) => a.index - b.index)
             );
@@ -140,7 +156,7 @@ const ColumnNameConverter: FC = () => {
                   origin: item,
                   translated_text: "",
                   error: e.message,
-                  dtype: typeof val,
+                  dtype: mapping_dtype(typeof val),
                 },
               ].sort((a, b) => a.index - b.index)
             );
@@ -150,7 +166,7 @@ const ColumnNameConverter: FC = () => {
   }, [request, requestMaxLength, urls.translate]);
 
   const outputEventUpdate = useMemo(() => {
-    return (originHeaders: [{[key:string]: any;}]) => {
+    return (originHeaders: [{ [key: string]: any }]) => {
       // console.log(originHeaders[0]);
       Promise.all(
         Object.keys(originHeaders[0])
@@ -165,7 +181,7 @@ const ColumnNameConverter: FC = () => {
 
   useEffect(() => {
     if (
-      originHeaders.length > 0 && 
+      originHeaders.length > 0 &&
       Object.keys(originHeaders[0]).length > 0 &&
       originHeaders.length > translatedHeaders.length
     ) {
@@ -178,7 +194,9 @@ const ColumnNameConverter: FC = () => {
     Promise.all(
       translatedHeaders
         .filter((x) => !x.translated_text?.trim())
-        .map((x) => translate(x.origin, x.index, true))
+        .map((x) =>
+          translate(x.origin, x.index, originHeaders[0][x.origin], true)
+        )
     );
   };
 
@@ -188,7 +206,7 @@ const ColumnNameConverter: FC = () => {
 
     handleReadFile(files ? files[0] : undefined);
   };
-  const createFormData = () => {
+  const createFormData = async () => {
     const json = JSON.stringify({
       filename: file?.name,
       header: translatedHeaders,
@@ -198,8 +216,26 @@ const ColumnNameConverter: FC = () => {
       type: "application/json",
     });
     let params = new FormData();
-    if (file) params.append("uploaded_file", file);
     params.append("header_info", blob);
+    let wfile = await file?.arrayBuffer().then((arrayBuffer) => {
+      let decoded = iconv.decode(
+        Buffer.from(arrayBuffer),
+        chardet.detect(new Uint8Array(arrayBuffer))!.toString()
+      );
+      let wblob = new Blob([new TextEncoder().encode(decoded)], {
+        type: "utf-8",
+      });
+      return new File([wblob], file?.name, {
+        lastModified: new Date().getTime(),
+        type: wblob.type,
+      });
+    });
+    if (wfile) params.append("uploaded_file", wfile);
+    // params.forEach((val, param) => {
+    //   console.log(param);
+    //   console.log(val);
+    // });
+
     return params;
   };
 
@@ -211,7 +247,7 @@ const ColumnNameConverter: FC = () => {
     await axios({
       method: "post",
       url: urls.createTable,
-      data: createFormData(),
+      data: await createFormData(),
       headers: { "Content-Type": "multipart/form-data" },
     })
       .then((res) => {
@@ -267,7 +303,7 @@ const ColumnNameConverter: FC = () => {
         <td>
           <select value={item.dtype} onChange={onChangeOption(index, "dtype")}>
             <option value="string">string</option>
-            <option value="number">number</option>
+            <option value="float64">float64</option>
             <option value="boolean">boolean</option>
             <option value="datetime">datetime</option>
             <option value="date">date</option>

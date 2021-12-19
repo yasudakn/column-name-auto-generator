@@ -139,14 +139,15 @@ app.post(
     },
   ]),
   async (req: Request, res: Response, next: NextFunction) => {
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    const header_info = JSON.parse(
-      files["header_info"][0].buffer?.toString("utf-8")
-    );
-    console.log(header_info);
-    const file = files["uploaded_file"][0].buffer;
-    const dest_filepath = `./uploads/${header_info.filename}`;
     try {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      const header_info = JSON.parse(
+        files["header_info"][0].buffer?.toString("utf-8")
+      );
+      console.log(header_info);
+      console.log(files);
+      const file = files["uploaded_file"][0].buffer;
+      const dest_filepath = `./uploads/${header_info.filename}`;
       writeFileSync(dest_filepath, file, { flag: "w", encoding: "utf-8" });
       const table_info = await createTable(
         header_info.header,
@@ -169,4 +170,4 @@ app.post(
   }
 );
 
-app.listen(3001);
+app.listen(parseInt(process.env.BACKEND_PORT || "3001"));
