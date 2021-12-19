@@ -29,6 +29,8 @@ type TranslatedText = {
 const translate_postproc = (translated_text: string) => {
   // 先頭の数字,記号の取り除き
   let post = translated_text.replace(/^([^a-z]*)([a-z]*)/i, "$2");
+  // 記号の取り除き
+  post = post.replace(/([!#$%&()*+,.:;=?@[]^{}-]+)/g, "");
   // 変換不可の日本語の取り除き
   // eslint-disable-next-line
   post = post.replace(/([^\x01-\x7E]+)/g, "");
@@ -304,6 +306,8 @@ const ColumnNameConverter: FC = () => {
           <select value={item.dtype} onChange={onChangeOption(index, "dtype")}>
             <option value="string">string</option>
             <option value="float64">float64</option>
+            <option value="int64">int64</option>
+            <option value="numeric">numeric</option>
             <option value="boolean">boolean</option>
             <option value="datetime">datetime</option>
             <option value="date">date</option>
