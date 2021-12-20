@@ -65,7 +65,9 @@ const ColumnNameConverter: FC = () => {
   const [originHeaders, setOriginHeaders] = useState<[{ [key: string]: any }]>([
     {},
   ]);
-  const [tableName, setTableName] = useState("my_table");
+  const [tableName, setTableName] = useState(
+    process.env.TABLE_ID || "my_table"
+  );
   const requestMaxLength = Number(
     process.env.REACT_APP_CODIC_API_REQUEST_MAX_LENGTH
   );
