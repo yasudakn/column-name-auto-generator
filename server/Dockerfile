@@ -8,6 +8,8 @@ RUN apt-get update && \
 
 COPY ./ /app/column-name-auto-generator
 
+COPY ./.env /app/column-name-auto-generator/server
+
 WORKDIR /app/column-name-auto-generator/server
 
 RUN npm i typescript && npm i
