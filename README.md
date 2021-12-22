@@ -2,6 +2,10 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## 使い方
+
+![画面収録-2021-12-22-10.18.52.gif](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/636318/78e502c5-d4fd-5e1e-9963-9449d4526082.gif)
+
 ## 事前準備
 
 * GCPサービスアカウント
